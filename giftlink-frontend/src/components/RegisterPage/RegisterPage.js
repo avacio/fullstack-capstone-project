@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { urlConfig } from '../../config';
+import { useAppContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
 
 import './RegisterPage.css';
 
@@ -7,9 +11,40 @@ function RegisterPage() {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showerr, setShowerr] = useState('');
+    const navigate = useNavigate();
+    const { setIsLoggedIn } = useAppContext();
 
     const handleRegister = async () => {
-        console.log("Register invoked")
+        console.log("Register invoked");
+        const response = await fetch(`${urlConfig.backendUrl}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+
+            body: JSON.stringify({
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password
+            })
+        });
+
+        //Step 2
+        const json = await response.json();
+        if (json.authtoken) {
+            sessionStorage.setItem('auth-token', json.authtoken);
+            sessionStorage.setItem('name', firstName);
+            sessionStorage.setItem('email', json.email);
+            //insert code for setting logged in state
+            setIsLoggedIn(true);
+            //insert code for navigating to MainPAge
+            navigate('/app');
+        }
+        if (json.error) {
+            setShowerr(json.error);
+        }
     }
 
     return (
@@ -68,6 +103,7 @@ function RegisterPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
+                        <div className="text-danger">{showerr}</div>
                         <button className="btn btn-primary w-100 mb-3" onClick={handleRegister}>Register</button>
                         <p className="mt-4 text-center">
                             Already a member? <a href="/app/login" className="text-primary">Login</a>
@@ -75,6 +111,7 @@ function RegisterPage() {
                     </div>
                 </div>
             </div>
+
         </div>
     );
 }
